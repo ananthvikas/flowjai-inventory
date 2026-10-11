@@ -1,0 +1,49 @@
+# ── Secrets & environment ──────────────────────────────────────────────
+.env
+.env.*
+*.key
+.secret_key
+
+# ── Database (never commit real lab data) ──────────────────────────────
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.sqlite
+data/*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# ── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+env/
+wheels/
+*.whl
+
+# ── Node / frontend ────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# ── PyInstaller build outputs ──────────────────────────────────────────
+build/
+dist/
+# The built frontend IS committed, so Python installs need no Node.js
+!frontend/dist/
+npm-debug.log*
+yarn-error.log*
+
+# ── OS / editor cruft ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── Runtime data (database, uploads, logs, signing key) ────────────────
+data/

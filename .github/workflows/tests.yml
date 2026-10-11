@@ -1,0 +1,19 @@
+# Runs the test suite on every push and pull request.
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install Python packages
+        run: pip install -r backend/requirements.txt pytest httpx
+      - name: Run tests
+        working-directory: backend
+        run: python -m pytest -q

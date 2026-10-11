@@ -1,0 +1,67 @@
+# Builds the Windows packaged app and attaches it to a GitHub Release.
+# Runs when a version tag (v0.8.2, v0.8.3-rc1, ...) is pushed or created with a release.
+name: Build Windows release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt pyinstaller pytest httpx
+
+      - name: Run tests (no release if any fail)
+        working-directory: backend
+        run: python -m pytest -q
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Build web interface
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package (dist\flowjAI\)
+        run: pyinstaller flowjai-inventory.spec --clean --noconfirm
+
+      # Same helper files build-exe.bat adds, so the release matches a local build
+      - name: Add start/stop/restart/transfer tools
+        shell: pwsh
+        run: |
+          $out = 'dist\flowjAI'
+          if (-not (Test-Path "$out\flowjai-inventory.exe")) { throw "$out\flowjai-inventory.exe missing" }
+          Copy-Item 'packaging\Start flowjAI.bat', 'packaging\README.txt' $out
+          foreach ($f in 'stop.bat','transfer-db.bat','start-background.bat','install-autorestart.bat',
+                         'uninstall-autorestart.bat','flowjai-service.ps1','run-hidden.vbs',
+                         'BUILD_VERSION.txt','RELEASE_NOTES.md','LICENSE') {
+            if (Test-Path $f) { Copy-Item $f $out }
+          }
+
+      - name: Zip and checksum
+        shell: pwsh
+        run: |
+          $zip = "flowjAI-${{ github.ref_name }}-windows.zip"
+          Compress-Archive -Path 'dist\flowjAI' -DestinationPath $zip
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  $zip" | Out-File -Encoding ascii "$zip.sha256"
+          Get-Content "$zip.sha256"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            flowjAI-${{ github.ref_name }}-windows.zip
+            flowjAI-${{ github.ref_name }}-windows.zip.sha256
