@@ -27,6 +27,7 @@ flowjAI template columns (names matched case-insensitively):
 """
 
 import io
+import logging
 import re
 from typing import List, Optional
 
@@ -40,6 +41,7 @@ from app.database import get_session
 from app.models import Antibody, Fluorochrome, User
 
 router = APIRouter(prefix="/api/import", tags=["import"])
+log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -225,6 +227,9 @@ class CommitRow(BaseModel):
     vendor: Optional[str]
     volume_ul: Optional[float]
     material_no: Optional[str]
+    # Set for rows the preview matched to an existing antibody: only a missing
+    # standard vial volume is filled in; nothing is created.
+    existing_antibody_id: Optional[int] = None
 
 
 class CommitResult(BaseModel):
@@ -443,10 +448,14 @@ async def preview_sap_import(
 
     try:
         rows = _parse_dataframe(df)
+        rows = _enrich_with_db(rows, session)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-    rows = _enrich_with_db(rows, session)
+    except Exception as e:  # never a bare 500: the page shows this message
+        log.exception("Antibody import preview failed for %s", filename)
+        raise HTTPException(status_code=400,
+                            detail=f"Could not process the file ({type(e).__name__}: {e}). "
+                                   "Details are in the app log (data/flowjai.log).")
     return rows
 
 
@@ -474,6 +483,18 @@ def commit_sap_import(
 
     for row in payload:
         try:
+            # Preview matched this row to an existing antibody: fill a missing
+            # standard vial volume only, never overwrite or duplicate
+            if row.existing_antibody_id:
+                ab = session.get(Antibody, row.existing_antibody_id)
+                if ab is not None:
+                    abs_skipped += 1
+                    if ab.vial_volume_ul is None and row.volume_ul and row.volume_ul > 0:
+                        ab.vial_volume_ul = row.volume_ul
+                        session.add(ab)
+                        vols_set += 1
+                    continue
+
             # Resolve or create fluorochrome
             fluor_obj = None
             if row.fluorochrome_name:

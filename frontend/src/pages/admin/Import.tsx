@@ -81,6 +81,24 @@ const TEMPLATE_CSV =
   'CD19,PE,EXAMPLE-002,BioLegend,500,Example row - replace or delete\r\n' +
   'CD45,V500,EXAMPLE-003,BD,250,Example row - replace or delete\r\n'
 
+// A readable message for any failure, instead of one generic line
+const FILE_UNREADABLE = 'FILE_UNREADABLE'
+
+function importError(err: unknown): string {
+  const e = err as any
+  if (e?.message === FILE_UNREADABLE) {
+    return 'The browser could not read this file. It is probably still open in Excel: '
+      + 'close it in Excel (or close Excel completely), then choose the file again.'
+  }
+  if (!e?.response) {
+    return 'The file could not be sent to the server. If it is open in Excel, close it and try again; '
+      + 'otherwise check the app is still running.'
+  }
+  const d = e.response.data?.detail
+  if (typeof d === 'string') return d
+  return `Server error ${e.response.status}. Details are in the app log (data/flowjai.log).`
+}
+
 function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: 'text/csv' }))
   const a = document.createElement('a')
@@ -103,8 +121,17 @@ export default function ImportPage() {
 
   const previewMut = useMutation({
     mutationFn: async (file: File) => {
+      // Read the file here first. Windows refuses the read while the file is
+      // open in Excel; without this check the upload just fails silently and
+      // the server never sees it.
+      let content: ArrayBuffer
+      try {
+        content = await file.arrayBuffer()
+      } catch {
+        throw new Error(FILE_UNREADABLE)
+      }
       const form = new FormData()
-      form.append('file', file)
+      form.append('file', new Blob([content], { type: file.type || 'application/octet-stream' }), file.name)
       const res = await api.post<SAPRow[]>('/import/sap/preview', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
@@ -128,6 +155,7 @@ export default function ImportPage() {
         vendor: r.vendor,
         volume_ul: r.volume_ul,
         material_no: r.material_no,
+        existing_antibody_id: r.status === 'exists' ? r.existing_antibody_id : null,
       }))
       const res = await api.post<CommitResult>('/import/sap/commit', payload)
       return res.data
@@ -148,6 +176,10 @@ export default function ImportPage() {
 
   const toImport = rows?.filter(r => r.status === 'new' || r.status === 'unrecognised') ?? []
   const toImportReady = toImport.filter(r => (r.override_name || r.antibody_name))
+  // Existing antibodies with a volume in the file: the import fills in their
+  // standard vial volume if they have none (the server checks, never overwrites)
+  const volumeFill = rows?.filter(r => r.status === 'exists' && r.existing_antibody_id && r.volume_ul) ?? []
+  const toCommit = [...toImportReady, ...volumeFill]
 
   // ── Summary counts ────────────────────────────────────────────────────
 
@@ -282,7 +314,7 @@ export default function ImportPage() {
             )}
             {previewMut.isError && (
               <p className="mt-3 text-sm text-red-600">
-                {(previewMut.error as any)?.response?.data?.detail ?? 'Error parsing file. Check the format and try again.'}
+                {importError(previewMut.error)}
               </p>
             )}
           </Card>
@@ -400,21 +432,24 @@ export default function ImportPage() {
             <div className="flex items-center gap-3">
               <p className="text-sm text-slate-500">
                 {toImportReady.length} of {toImport.length} rows ready to import
+                {volumeFill.length > 0 && ` · ${volumeFill.length} existing: vial volume filled in if missing`}
               </p>
               <Button
-                onClick={() => commitMut.mutate(toImportReady)}
-                disabled={commitMut.isPending || toImportReady.length === 0}
+                onClick={() => commitMut.mutate(toCommit)}
+                disabled={commitMut.isPending || toCommit.length === 0}
               >
                 {commitMut.isPending
                   ? 'Importing...'
-                  : `Import ${toImportReady.length} antibod${toImportReady.length === 1 ? 'y' : 'ies'}`}
+                  : toImportReady.length === 0
+                    ? 'Fill in vial volumes'
+                    : `Import ${toImportReady.length} antibod${toImportReady.length === 1 ? 'y' : 'ies'}`}
               </Button>
             </div>
           </div>
 
           {commitMut.isError && (
             <p className="text-sm text-red-600">
-              {(commitMut.error as any)?.response?.data?.detail ?? 'Error during import'}
+              {importError(commitMut.error)}
             </p>
           )}
         </div>

@@ -113,3 +113,23 @@ def test_old_xls_is_rejected_with_a_clear_message(h):
 def test_file_without_name_columns_is_rejected(h):
     r = preview(h, "bad.csv", b"Foo,Bar\n1,2\n")
     assert r.status_code == 400
+
+
+def test_existing_row_from_preview_fills_volume_without_duplicating(h):
+    """The page sends rows the preview marked 'exists' with their antibody id."""
+    with Session(engine) as s:
+        s.add(Antibody(name="CD20", catalog_no="EXAMPLE-030"))
+        s.commit()
+    csv = ("Antibody Name,Fluorochrome Name,Catalogue No,Manufacturer,Vial Volume uL\n"
+           "CD20,BV421,EXAMPLE-030,BD,250\n").encode()
+    rows = preview(h, "x.csv", csv).json()
+    assert rows[0]["status"] == "exists"
+    body = [{**{k: rows[0][k] for k in ("row_index", "antibody_name", "fluorochrome_name",
+                                         "catalog_no", "vendor", "volume_ul", "material_no")},
+             "existing_antibody_id": rows[0]["existing_antibody_id"]}]
+    res = client.post("/api/import/sap/commit", headers=h, json=body).json()
+    assert res["antibodies_created"] == 0 and res["vial_volumes_set"] == 1
+    assert res["fluorochromes_created"] == 0
+    assert antibody("EXAMPLE-030").vial_volume_ul == 250
+    with Session(engine) as s:
+        assert len(s.exec(select(Antibody).where(Antibody.catalog_no == "EXAMPLE-030")).all()) == 1

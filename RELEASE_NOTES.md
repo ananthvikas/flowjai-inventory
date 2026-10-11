@@ -34,6 +34,8 @@
   Catalogue No, Manufacturer, Vial Volume uL, optional Description. SAP exports work as
   before.
 - Renamed to **Antibody import**; example rows use made-up codes.
+- Errors now say what went wrong (including "close the file in Excel" when the upload
+  cannot be sent) instead of one generic message; unexpected failures are logged.
 
 ## Help and feedback
 - Contact address **feedback.flowjai@gmail.com** on the About page, in the README and in the
