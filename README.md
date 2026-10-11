@@ -91,10 +91,14 @@ Keep the window open while using the app, and **do not click inside it** — Win
 
 ### Option C — macOS / Linux with Python
 
+Requires **Python 3.11 or 3.12** (macOS: from python.org or Homebrew; Linux: also `sudo apt install python3-venv`).
+
 ```bash
-./launch.sh
+bash launch.sh
 # Open http://localhost:8000
 ```
+
+Tested on Linux. macOS is expected to work but has not yet been tested — feedback welcome.
 
 ### Demo data
 
