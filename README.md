@@ -1,5 +1,7 @@
 # flowjAI Inventory Manager
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23302747.svg)](https://doi.org/10.5281/zenodo.23302747)
+
 A self-hosted reagent inventory and sample-processing system for clinical and research flow cytometry laboratories. Tracks antibodies from the stockroom to the bench, models consumption per panel, forecasts depletion, verifies new shipments, and traces every sample back to the cocktail and antibody lots it was run on — entirely within your laboratory network, with no cloud dependency and no subscription.
 <p align="center"><img src="docs/screenshots/dashboard.png" width="850" alt="flowjAI dashboard showing stock status and a depletion forecast"></p>
 
@@ -101,10 +103,14 @@ Keep the window open while using the app, and **do not click inside it** — Win
 
 ### Option C — macOS / Linux with Python
 
+Requires **Python 3.11 or 3.12** (macOS: from python.org or Homebrew; Linux: also `sudo apt install python3-venv`).
+
 ```bash
-./launch.sh
+bash launch.sh
 # Open http://localhost:8000
 ```
+
+Tested on Linux. macOS is expected to work but has not yet been tested — feedback welcome.
 
 ### Demo data
 
@@ -241,7 +247,7 @@ flowjai-inventory/
 
 ## How to cite
 
-If you use flowjAI Inventory Manager in your work, please cite it using the metadata in [CITATION.cff](CITATION.cff) (GitHub's **Cite this repository** button generates the reference).
+If you use flowjAI Inventory Manager in your work, please cite it using the metadata in DOI: [10.5281/zenodo.23302747](https://doi.org/10.5281/zenodo.23302747) — this DOI always resolves to the latest version.
 
 ---
 
