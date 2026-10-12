@@ -1,6 +1,7 @@
 # flowjAI Inventory Manager
 
 A self-hosted reagent inventory and sample-processing system for clinical and research flow cytometry laboratories. Tracks antibodies from the stockroom to the bench, models consumption per panel, forecasts depletion, verifies new shipments, and traces every sample back to the cocktail and antibody lots it was run on — entirely within your laboratory network, with no cloud dependency and no subscription.
+<p align="center"><img src="docs/screenshots/dashboard.png" width="850" alt="flowjAI dashboard showing stock status and a depletion forecast"></p>
 
 Designed and built by **Ananthvikas Jayaram**. Clinical requirements and validation supported by Sriram Sujay Prasad and Sujay Ramaprasad.
 
@@ -16,21 +17,31 @@ Current version: **0.8.3** — see [RELEASE_NOTES.md](RELEASE_NOTES.md) for the 
 - **Standard vial volume** per catalogue number, applied automatically on receipt; deviations require a recorded reason, and a Volume check page lists legacy discrepancies
 - **Forecasting** — Holt-Winters depletion projection including store-stock vials
 - **Alerts** — shortage, expiry, substitute suggestions and shipment-verification deadlines, with admin-configurable thresholds
+<p align="center"><img src="docs/screenshots/inventory.png" width="750" alt="Open-vial inventory with remaining volume"></p>
 
 **Panels, cocktails and tests**
 - **Panels** — per-antibody µl/tube mapping, shared test groups, and marker search across fluorochrome variants
 - **Cocktails** — pre-mixed batches with pre-flight stock warnings, printable worksheets (showing lot and shipment per antibody), and a preparation log recording who mixed each batch
 - **Test logging** — from a panel, a cocktail, or ad hoc antibody selection; CSV import for LIMS data; shortfalls are recorded, never silently skipped
+<p align="center"><img src="docs/screenshots/cocktails.png" width="750" alt="Prepared cocktail batches"></p>
 
 **Worklist and bench station**
 - **Worklist** — sample orders with cocktail reservation and turnaround-time tracking; lab ID search across all dates
 - **Bench station** (`/station`) — full-screen touchscreen view for a bench tablet: per-tube processing steps, step timers with alarms for under- and over-incubation, undo, and large glove-friendly buttons
 - **Sample flags and comments** — one-tap flags (fibrin threads, low volume, lyse issue) and free-text comments, each attributed to a named staff member
+<p align="center">
+  <img src="docs/screenshots/worklist.png" width="560" alt="Worklist with sample orders and turnaround times">
+  <img src="docs/screenshots/station.png" width="300" alt="Bench station on a tablet with a step timer">
+</p>
 
 **Quality and traceability**
 - **Shipment QC** — an automatic verification task when an antibody arrives under a new shipment ID, with a 48-hour deadline, evidence-gated sign-off (previous and new shipment), and an immutable audit log
 - **Cocktail trace** — from any tube, list every sample run on that cocktail, the antibody lots and shipments in it, and other cocktails drawn from the same lots
 - **Staff names on shared logins** — cocktail preparation, shipment sign-off, bench steps and sample comments all record the named person, not just the login
+<p align="center">
+  <img src="docs/screenshots/shipment-qc.png" width="430" alt="Shipment QC verification with evidence">
+  <img src="docs/screenshots/trace.png" width="430" alt="Cocktail trace from tube to antibody lots and shipments">
+</p>
 
 **Operations**
 - **Antibody import** — load your antibody master list from CSV or Excel (.xlsx), using the [import template](templates/antibody-import-template.csv) or a SAP materials export, including each antibody's standard vial volume
@@ -38,6 +49,7 @@ Current version: **0.8.3** — see [RELEASE_NOTES.md](RELEASE_NOTES.md) for the 
 - **Roles** — Admin / Technologist, JWT authenticated
 - **Background running on Windows** — hidden service with daily restart and a health-check watchdog
 - **Safe database transfer** between installs, with automatic backup and record-count verification
+<p align="center"><img src="docs/screenshots/import.png" width="750" alt="Antibody import preview"></p>
 
 Runs on Windows (packaged app or Python), and on macOS and Linux (Python).
 
